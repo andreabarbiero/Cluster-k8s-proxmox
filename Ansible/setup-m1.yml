@@ -1,0 +1,261 @@
+---
+- hosts: proxmox
+  gather_facts: no
+  vars_files: vars.yml
+  tasks:
+  - name: Creo il Master node "{{ vmname }}"
+    proxmox_kvm:
+      newid: "{{ vmid }}"
+      vmid: "{{  template_vmid  }}"
+      node: "{{ node }}"
+      api_user: "{{ api_user }}"
+      api_password: "{{ api_password }}"
+      api_host: "{{ api_host }}"
+      name: "{{ vmname }}"
+      net: '{"net0":"virtio,bridge={{ vmbridge }}"}'
+      virtio: '{"virtio0":"local-lvm:{{ vmdisk }}"}'
+      cores: "{{ vmcores }}"
+      vcpus: "{{ vmvcpus }}"
+      memory: "{{ vmmemory }}"
+      clone: "{{ template }}"
+      timeout: "{{ timeout_disk }}"
+
+  - name: Avvio VM "{{ vmname }}"
+    proxmox_kvm:
+      api_user: "{{ api_user }}"
+      api_password: "{{ api_password }}"
+      api_host: "{{ api_host }}"
+      name        : "{{ vmname }}"
+      node        : "{{ node }}"
+      state       : started
+
+- name: Configurazione dell'ambiente Master "{{ vmname }}"
+  hosts: linux
+  gather_facts: no
+  vars_files: vars.yml
+  vars:
+    wait_seconds: 90
+  tasks:
+  
+  - name: Attendo per {{ wait_seconds | int }} secondi che il servizio ssh sia avviato
+    ansible.builtin.pause:
+      seconds: "{{ wait_seconds | int }}"
+  
+  - name: Imposto l'hostname "{{ vmname }}"
+    hostname:
+      name: "{{ vmname }}"
+
+  - name: Scrivo in /etc/hosts della vm "{{ vmname }}"
+    copy:
+      dest: /etc/hosts
+      content: |
+        127.0.0.1       localhost
+        {{ address }} {{ vmname }}.localdomain   {{ vmname }}
+        {{ address1 }} {{ vmname1 }}.localdomain   {{ vmname1 }}
+        {{ address2 }} {{ vmname2 }}.localdomain   {{ vmname2 }}
+        ::1     localhost ip6-localhost ip6-loopback
+        ff02::1 ip6-allnodes
+        ff02::2 ip6-allrouters
+
+  - name: Eseguo un apt update
+    ansible.builtin.apt:
+      name: "*"
+      state: latest
+  
+  - name: Installo i pacchetti - sudo - net-tools - dnsutils - ufw
+    ansible.builtin.apt:
+      pkg:
+      - sudo
+      - net-tools
+      - dnsutils
+      - ufw
+  
+  - name: Apro la porta 22 tcp 
+    community.general.ufw:
+      rule: allow
+      port: '22'
+      proto: tcp
+  
+  - name: Abilito il servizio UFW
+    community.general.ufw:
+      state: enabled
+
+  - name: Abilito il log di UFW
+    community.general.ufw:
+      logging: 'on'
+
+  - name: Apro la porta 6443
+    community.general.ufw:
+      rule: allow
+      port: '6443'
+      proto: tcp
+  
+  - name: Apro le porte nel range 2379:2380
+    community.general.ufw:
+      rule: allow
+      port: 2379:2380
+      proto: tcp
+
+  - name: Apro la porta 10250
+    community.general.ufw:
+      rule: allow
+      port: '10250'
+      proto: tcp
+
+  - name: Apro la porta 10259
+    community.general.ufw:
+      rule: allow
+      port: '10259'
+      proto: tcp
+  
+  - name: Apro la porta 10257
+    community.general.ufw:
+      rule: allow
+      port: '10257'
+      proto: tcp
+
+  - name: Apro la porta 179
+    community.general.ufw:
+      rule: allow
+      port: '179'
+      proto: tcp
+  
+  - name: Apro la porta 4789 tcp
+    community.general.ufw:
+      rule: allow
+      port: '4789'
+      proto: tcp
+  
+  - name: Apro la porta 4789 udp
+    community.general.ufw:
+      rule: allow
+      port: '4789'
+      proto: udp
+
+  - name: Apro la porta 2379
+    community.general.ufw:
+      rule: allow
+      port: '2379'
+      proto: tcp
+
+  - name: Abilito il modulo overlay
+    ansible.builtin.shell:
+      cmd: modprobe overlay
+  
+  - name: Abilito il modulo br_netfilter
+    ansible.builtin.shell:
+      cmd: modprobe br_netfilter
+
+  - name: Creo il file /etc/modules-load.d/k8s.conf
+    file:
+      path: /etc/modules-load.d/k8s.conf
+      state: touch
+
+  - name: Scrivo nel file k8s.conf i parametri overlay e br_netfilter
+    copy:
+      dest: /etc/modules-load.d/k8s.conf
+      content: |
+        overlay
+        br_netfilter
+  
+  - name: Creo il file /etc/sysctl.d/k8s.conf
+    file:
+      path: /etc/sysctl.d/k8s.conf
+      state: touch
+
+  - name: Scrivo i parametri net.bridge.bridge-nf-call-iptables  = 1 net.bridge.bridge-nf-call-ip6tables = 1 net.ipv4.ip_forward= 1 nel file /etc/sysctl.d/k8s.conf
+    copy:
+      dest: /etc/sysctl.d/k8s.conf
+      content: |
+        net.bridge.bridge-nf-call-iptables  = 1
+        net.bridge.bridge-nf-call-ip6tables = 1
+        net.ipv4.ip_forward                 = 1
+  
+  - name: Eseguo il comando sysctl --system
+    ansible.builtin.shell:
+      cmd: sysctl --system
+
+  - name: Installo i seguenti pacchetti apt-transport-https - ca-certificates - curl - gnupg2
+    ansible.builtin.apt:
+      pkg:
+      - apt-transport-https 
+      - ca-certificates
+      - curl
+      - gnupg2
+
+  - name: Creo la directory /etc/apt/keyrings se non esiste
+    ansible.builtin.file:
+      path: /etc/apt/keyrings
+      state: directory
+      mode: '0755'
+
+  - name: Aggiungo in apt la chiave GPG per Docker
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Aggiungo il Docker Repository
+    apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu focal stable
+      state: present
+
+  - name: Aggiungo la Chiave Google GPG
+    shell: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add
+
+  - name: Aggiungo i repository Kubernetes
+    copy:
+      dest: /etc/apt/sources.list.d/kubernetes.list
+      content: |
+        deb https://apt.kubernetes.io/ kubernetes-xenial main
+
+  - name: Aggiorno i pacchetti con i nuovi repository
+    ansible.builtin.apt:
+      name: "*"
+      state: latest
+  
+  - name: Installo il pacchetto containerd.io
+    ansible.builtin.apt:
+      pkg:
+      - containerd.io 
+      state: present
+
+  - name: Aggiungo la configurazione di default per containerd
+    shell: containerd config default | sudo tee /etc/containerd/config.toml
+  
+  - name: Imposto il cgroup driver per partire con systemd
+    shell: sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+
+  - name: Riavvio containerd service
+    shell: systemctl restart containerd  
+
+  - name: Installo i pacchetti kubelet - kubeadm - kubectl
+    ansible.builtin.apt:
+      pkg:
+      - kubelet 
+      - kubeadm  
+      - kubectl
+      update_cache: yes
+  
+  - name: Assegno l'indirizzo ip "{{ address }}" alla VM "{{ vmname }}"
+    shell: sed -i 's/192.168.1.70/"{{ address }}"/g' /etc/network/interfaces
+
+
+- hosts: proxmox
+  gather_facts: no
+  vars_files: vars.yml
+
+  tasks:
+  - name: Unlock del file lock-"{{ template_vmid }}"
+    shell: qm unlock "{{ template_vmid }}"
+
+  - name: Unlock del file lock-"{{ vmid }}"
+    shell: qm unlock "{{ vmid }}"
+
+  - name: Riavvio la VM "{{ vmname }}"
+    proxmox_kvm:
+      api_user: "{{ api_user }}"
+      api_password: "{{ api_password }}"
+      api_host: "{{ api_host }}"
+      name        : "{{ vmname }}"
+      node        : "{{ node }}"
+      state       : restarted

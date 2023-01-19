@@ -1,0 +1,44 @@
+---
+# --- Credenziali Proxmox --- #
+node        : host1
+api_user    : terraform-prov@pve
+api_password: test123
+api_host    : 192.168.1.200
+
+# --- Variabili Generiche --- #
+
+template_vmid : 101
+timeout_disk : 1200
+
+# --- K8S-M1 --- #
+vmid        : 202
+vmname      : K8S-M1
+vmcores     : 2
+vmvcpus     : 1
+vmmemory    : 1024
+vmdisk      : 50
+vmbridge    : vmbr0
+template    : Debian
+address     : 192.168.1.65
+
+# ---  K8S-W1 --- #
+vmid1        : 203
+vmname1      : K8S-W1
+vmcores1     : 2
+vmvcpus1     : 1
+vmmemory1    : 1024
+vmdisk1      : 50
+vmbridge1    : vmbr0
+template1    : Debian
+address1     : 192.168.1.66
+
+# --- K8S-W2 --- #
+vmid2        : 204
+vmname2      : K8S-W2
+vmcores2     : 2
+vmvcpus2     : 1
+vmmemory2    : 1024
+vmdisk2      : 50
+vmbridge2    : vmbr0
+template2    : Debian
+address2     : 192.168.1.67

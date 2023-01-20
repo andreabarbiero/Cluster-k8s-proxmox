@@ -1,0 +1,103 @@
+---
+# --- Credenziali Proxmox --- #
+node        : host1
+api_user    : terraform-prov@pve
+api_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          31666235323735313461326234353637333132616438333835306365656634343261343261303730
+          3963373862626134366530666237373031303238303334610a326465376165376136393231323263
+          31333139373839393762366236376633323031646234363534346233386330633539646139623033
+          3563643934346634320a623730303536303838303861666432633063396132383236343564313166
+          3664
+api_host    : 192.168.1.200
+
+# --- Variabili Generiche --- #
+
+template_vmid : 101
+
+# --- K8S-M1 --- #
+vmid        : 202
+vmname      : K8S-M1
+vmcores     : 2
+vmvcpus     : 1
+vmmemory    : 2048
+vmdisk      : 50
+vmbridge    : vmbr0
+template    : Debian
+address     : 192.168.1.65
+timeout_disk : 1200
+
+# ---  K8S-W1 --- #
+vmid1        : 203
+vmname1      : K8S-W1
+vmcores1     : 2
+vmvcpus1     : 1
+vmmemory1    : 2048
+vmdisk1      : 50
+vmbridge1    : vmbr0
+template1    : Debian
+address1     : 192.168.1.66
+timeout_disk1 : 2100
+
+# --- K8S-W2 --- #
+vmid2        : 204
+vmname2      : K8S-W2
+vmcores2     : 2
+vmvcpus2     : 1
+vmmemory2    : 2048
+vmdisk2      : 50
+vmbridge2    : vmbr0
+template2    : Debian
+address2     : 192.168.1.67
+timeout_disk2 : 2100
+
+# Kubernetes vars
+ansible_user_id: root
+# Kubernetes
+kube_version: v1.24.1
+token: b0f7b8.8d1767876297d85c
+master_ip: 192.168.1.65
+# 1.8.x feature: --feature-gates SelfHosting=true
+init_opts: ""
+
+# Any other additional opts you want to add..
+kubeadm_opts: ""
+# For example:
+# kubeadm_opts: '--apiserver-cert-extra-sans "k8s.domain.com,kubernetes.domain.com"'
+
+service_cidr: "10.96.0.0/12"
+pod_network_cidr: "10.244.0.0/16"
+
+# Network implementation('flannel', 'calico', 'canal')
+network: calico
+
+# Change this to an appropriate interface, preferably a private network.
+# For example, on DigitalOcean, you would use eth1 as that is the default private network interface.
+network_interface: ""
+
+enable_dashboard: yes
+
+# A list of insecure registries you might need to define
+# insecure_registries: []
+insecure_registries: ['gcr.io']
+
+systemd_dir: /lib/systemd/system
+system_env_dir: /etc/sysconfig
+network_dir: /etc/kubernetes/network
+kubeadmin_config: /etc/kubernetes/admin.conf
+kube_addon_dir: /etc/kubernetes/addon
+
+# Additional feature to install
+additional_features:
+  helm: false
+  metallb: false
+  healthcheck: false
+
+# temporary directory used by additional features
+tmp_dir: /tmp/kubeadm-ansible-files
+
+# Container runtimes ('containerd', 'crio')
+container_runtime: containerd
+
+# helm helm version
+helm_version: "v2.17.0"

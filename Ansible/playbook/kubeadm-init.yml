@@ -1,0 +1,56 @@
+---
+- hosts: K8S-M
+  gather_facts: no
+  vars_files: vars.yml
+
+  tasks:
+  - name: Reset Kubernetes component
+    shell: "kubeadm reset --force --cri-socket=/var/run/{{ container_runtime }}/{{ container_runtime }}.sock"
+    register: reset_cluster
+
+  - name: Init Kubernetes cluster
+    when: reset_cluster is succeeded
+    shell: |
+      kubeadm init --service-cidr {{ service_cidr }} \
+                  --kubernetes-version {{ kube_version }} \
+                  --pod-network-cidr {{ pod_network_cidr }} \
+                  --token {{ token }} \
+                  --apiserver-advertise-address {{ master_ip }} \
+                  --cri-socket=/var/run/{{ container_runtime }}/{{ container_runtime }}.sock \
+                  {{ kubeadm_opts }} \
+                  {{ init_opts }}
+    register: init_cluster
+    environment:
+      no_proxy: "$no_proxy,.svc,.svc.cluster.local"
+
+  - name: Creo Kubernetes config directory
+    file:
+      path: ".kube/"
+      state: directory
+
+  - name: Copio admin.conf nella Home directory
+    when: init_cluster is succeeded
+    copy:
+      src: "{{ kubeadmin_config }}"
+      dest: ".kube/config"
+      owner: root
+      group: root
+      mode: 0755
+      remote_src: true
+  
+  - name: Creo la directory /root/yaml se non esiste
+    ansible.builtin.file:
+      path: /root/yaml
+      state: directory
+      mode: '0755'
+
+  - name: Download calico
+    ansible.builtin.get_url:
+      url: https://docs.projectcalico.org/manifests/calico.yaml
+      dest: /root/yaml/calico.yaml
+      mode: '0644'
+
+  - name: Applico calico
+    shell: kubectl apply -f /root/yaml/calico.yaml
+
+  

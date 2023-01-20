@@ -19,4 +19,3 @@
       memory: "{{ vmmemory }}"
       clone: "{{ template }}"
       timeout: "{{ timeout_disk }}"
-    

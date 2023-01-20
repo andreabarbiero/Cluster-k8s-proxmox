@@ -184,13 +184,10 @@
       state: present
 
   - name: Aggiungo la Chiave Google GPG
-    shell: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add
+    shell: "curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg"
 
   - name: Aggiungo i repository Kubernetes
-    copy:
-      dest: /etc/apt/sources.list.d/kubernetes.list
-      content: |
-        deb https://apt.kubernetes.io/ kubernetes-xenial main
+    shell: echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
   - name: Aggiorno i pacchetti con i nuovi repository
     ansible.builtin.apt:
@@ -215,9 +212,9 @@
   - name: Installo i pacchetti kubelet - kubeadm - kubectl
     ansible.builtin.apt:
       pkg:
-      - kubelet 
-      - kubeadm  
-      - kubectl
+      - kubelet=1.24.1-00
+      - kubeadm=1.24.1-00
+      - kubectl=1.24.1-00
       update_cache: yes
   
   - name: Assegno l'indirizzo ip "{{ address }}" alla VM "{{ vmname }}"
@@ -243,3 +240,4 @@
       name        : "{{ vmname }}"
       node        : "{{ node }}"
       state       : restarted
+

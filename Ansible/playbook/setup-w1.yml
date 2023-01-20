@@ -5,26 +5,6 @@
   vars:
     wait_seconds: 90
   tasks:
-  - name: Creo il Worker node "{{ vmname1 }}"
-    proxmox_kvm:
-      newid: "{{ vmid1 }}"
-      vmid: "{{  template_vmid  }}"
-      node: "{{ node }}"
-      api_user: "{{ api_user }}"
-      api_password: "{{ api_password }}"
-      api_host: "{{ api_host }}"
-      name: "{{ vmname1 }}"
-      net: '{"net0":"virtio,bridge={{ vmbridge1 }}"}'
-      virtio: '{"virtio0":"local-lvm:{{ vmdisk1 }}"}'
-      cores: "{{ vmcores1 }}"
-      vcpus: "{{ vmvcpus1 }}"
-      memory: "{{ vmmemory1 }}"
-      clone: "{{ template1 }}"
-      timeout: "{{ timeout_disk }}"
-  
-  - name: Attendo per "{{ wait_seconds | int }}" secondi che il servizio ssh sia avviato
-    ansible.builtin.pause:
-      seconds: "{{ wait_seconds | int }}"
 
   - name: Avvio VM "{{ vmname1 }}"
     proxmox_kvm:
@@ -188,13 +168,10 @@
       state: present
 
   - name: Aggiungo la Chiave Google GPG
-    shell: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add
+    shell: "curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg"
 
   - name: Aggiungo i repository Kubernetes
-    copy:
-      dest: /etc/apt/sources.list.d/kubernetes.list
-      content: |
-        deb https://apt.kubernetes.io/ kubernetes-xenial main
+    shell: echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
   - name: Aggiorno i pacchetti con i nuovi repository
     ansible.builtin.apt:
@@ -219,9 +196,9 @@
   - name: Installo i pacchetti kubelet - kubeadm - kubectl
     ansible.builtin.apt:
       pkg:
-      - kubelet 
-      - kubeadm  
-      - kubectl
+      - kubelet=1.24.1-00
+      - kubeadm=1.24.1-00
+      - kubectl=1.24.1-00
       update_cache: yes
   
   - name: Assegno l'indirizzo ip "{{ address1 }}" alla VM "{{ vmname1 }}"

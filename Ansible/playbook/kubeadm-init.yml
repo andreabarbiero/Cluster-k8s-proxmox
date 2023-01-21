@@ -53,4 +53,23 @@
   - name: Applico calico
     shell: kubectl apply -f /root/yaml/calico.yaml
 
+  #- name: Applico Metrics-Server
+  #  shell: kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+  - name: Download Metrics-Server
+    ansible.builtin.get_url:
+      url: https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+      dest: /root/yaml/components.yaml
+      mode: '0644'
+  
+  #- name: Aggiungo l'opzione per - --kubelet-insecure-tls
+  #  shell: sed -i '/--metric-resolution=15s:$/a\\t\t\t\t- --kubelet-insecure-tls' /root/yaml/components.yaml
+  
+  - name: Aggiungo l'opzione per - --kubelet-insecure-tls
+    shell: sed -i -E '/(-( ))?- --metric-resolution=15s.*/{p;s//\2\2- --kubelet-insecure-tls/}' /root/yaml/components.yaml
+
+  - name: Applico il pod per le mteriche
+    shell: kubectl apply -f /root/yaml/components.yaml
+
+
   

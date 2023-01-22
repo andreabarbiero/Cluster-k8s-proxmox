@@ -8,30 +8,26 @@ STEP 3:	Inizializzazione del Cluster k8s sul nodo Master tramite kubeadm e join 
 
 Di seguito l'elenco dei playbook:
 
-Playbook per il provisioning delle Virtual Machine da un template Debian 11 (lì ho divisi perchè con un unico playbook avevo un errore di timeout)
-	-	provisioning-m1.yml
-	-	provisioning-w1.yml
-	-	provisioning-w2.yml
+Playbook per il provisioning delle Virtual Machine da un template Debian 11
+	-	provisioning-vm.yml
 
 Playbook per le configurazioni e setup dei software necessari.
 	-	setup-m1.yml
-	-	setup-w1.yml
-	-	setup-w2.yml
+	-	setup-w1-w2.yml
 
 Playbook per inizializzare il Cluster e per la join dei nodi worker
-	-	kubeadm-init.yml (installa anche calico)
-	-	kubeadm-join.yml
+	-	kubeadm-init-join.yml (installa anche calico)
 
 Descrizione della parte di provisioning:
-Il playbook provisioning-m1.yml si connette all'hypervisor, da un template Debian 11 crea una VM (destinata al nodo Master) denominata Debian.
-Gli altri due playbook (w1-w2) creeranno altre due vm dallo stesso template, ma destinate ai nodi worker.
+Il playbook provisioning-vm.yml si connette all'hypervisor, da un template Debian 11 crea una ad una le 3 VM Debian.
 
 Descrizione della parte della configurazione:
-I 3 playbook eseguono sostanzialmente lo stesso setup, ovvero attivano i moduli del kernel linux "overlay" e "br_netfilter", eseguono il setup dei software necessari a kubernetes, ma il playbook setup-m1 effettua l'apertura delle porte del firewall che sono diverse rispetto ai worker. 
+I 2 playbook eseguono sostanzialmente lo stesso setup, ovvero attivano i moduli del kernel linux "overlay" e "br_netfilter", eseguono il setup dei software necessari a kubernetes, ma il playbook setup-m1 effettua l'apertura delle porte del firewall che sono diverse rispetto ai worker. 
 
 Descrizione della parte di init e join del cluster:
 il playbook eseguirà prima un kubeadm reset, poi se il reset avrà esito success proseguirà con l'inizializzazione del nodo master.
 Crea la cartella nascosta ".kube/", copia al suo interno in un file denominato config, il contenuto del file "admin.conf", viene poi creata una cartella che conterrà i file "calico.yaml" e "components.yaml" per la configurazione dei pod, per la network e per il pod che restituisce le metriche del cluster e dei vari pod.
+Subito dopo verrà eseguita la join dei nodi worker.
 
 NOTA: prima dell'installazione del file components.yaml ho eseguito una sed che mi inseriesce nel file yaml con la giusta tabulazione l'opzione --kubelet-insecure-tls, per fare in modo che funzioni tutto senza l'opzione --kubelet-insecure-tls bisogna:
 

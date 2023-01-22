@@ -1,7 +1,7 @@
 ###### Challenge - Kubernetes ######
 
 Obbiettivo:
-Eseguire il provisioning di un cluster Kubernetes composto da un manager e due workers e deployare una applicazione composta da almeno tre servizi e che presenti una interfaccia grafica accessibile via browser.
+Eseguire il provisioning di un cluster Kubernetes composto da un master e due workers e deployare una applicazione composta da almeno tre servizi e che presenti una interfaccia grafica accessibile via browser.
 
 Hypervisor:
 La scelta dell'Hypervisor si divideva in 3 software che utilizzo day by day.
@@ -9,7 +9,7 @@ La scelta dell'Hypervisor si divideva in 3 software che utilizzo day by day.
 -	VirtualBox
 -	Proxmox
 
-Ho scelto Proxmox come hypervisor semplicemente perchè mi sembrava una simulazione più simile agli ambienti enterprice.
+Ho scelto Proxmox come hypervisor semplicemente perchè mi sembrava una simulazione più simile agli ambienti enterprise.
 
 
 Attività:
@@ -23,12 +23,11 @@ STEP(2)
 Provisioning delle VM tramite Ansible.
 
 STEP(3)
-Configurazione delle VM tramite Ansible.
+Configurazione delle VM e inizializzare i ruoli di Master e di Worker tramite Ansible.
 
 STEP(4)
-Predisporre un provider Terraform per inizializzare i ruoli di Master e di Worker
-Creare un namespace tramite Terraform
-Avviare un test per la security 
+Predisporre un provider Terraform per creare un namespace tramite Terraform
+e avviare un test per la security 
 
 STEP(5)
 Configurare un'app tramite HELM, composta da almeno 3 servizi e che sia aggiornabile con meno disservizio possibile.

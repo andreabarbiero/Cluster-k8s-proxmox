@@ -50,6 +50,7 @@
     ansible.builtin.apt:
       pkg:
       - sudo
+      - vim
       - net-tools
       - dnsutils
       - ufw
@@ -217,6 +218,27 @@
       - kubectl=1.24.1-00
       update_cache: yes
   
+  - name: Installo HELM 
+    shell: wget https://get.helm.sh/helm-v3.11.0-linux-amd64.tar.gz
+
+#  - name : Copy the Java JDK files
+#    unarchive:
+#      src: "https://get.helm.sh/helm-v3.11.0-linux-amd64.tar.gz"
+#      dest: "/opt/tomcat8/"
+#      mode: 0755
+#      remote_src: yes
+
+  - name: Estraggo i file binari
+    ansible.builtin.unarchive:
+      src: helm-v3.11.0-linux-amd64.tar.gz
+      dest: /root
+      mode: 0755
+      remote_src: yes
+
+
+  - name: Copio i file binari della cartella /usr/local/bin
+    shell: mv linux-amd64/helm /usr/local/bin/helm
+
   - name: Assegno l'indirizzo ip "{{ address }}" alla VM "{{ vmname }}"
     shell: sed -i 's/192.168.1.70/"{{ address }}"/g' /etc/network/interfaces
 

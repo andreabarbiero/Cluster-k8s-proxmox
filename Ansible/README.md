@@ -38,7 +38,9 @@ nodeStatusReportFrequency: 0s
 nodeStatusUpdateFrequency: 0s
 rotateCertificates: true
 runtimeRequestTimeout: 0s
+
 serverTLSBootstrap: true # opzione aggiunta
+
 shutdownGracePeriod: 0s
 shutdownGracePeriodCriticalPods: 0s
 staticPodPath: /etc/kubernetes/manifests
